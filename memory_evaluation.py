@@ -1,74 +1,57 @@
-from memories.datasets.base import QuestionAnswerPair, MemoryDataset
-from inference_utils.operators import (
-    QuestionAnsweringOperator,
-    LLMExactMatch,
-)
-from memories import DATASET_MAPPING
-import numpy as np
+from string import Template
+from membase.model_types.dataset import QuestionAnswerPair
+from membase.inference_utils.operators import QuestionAnsweringOperator
+from membase.model_types.memory import MemoryEntry
+from membase.utils.files import import_function_from_path
+from membase import DATASET_MAPPING
 import argparse
 import json 
 import os 
-from typing import (
-    List,
-    Dict,
-    Any,
-    Optional,
-    Tuple,
-)
-
-
-def _build_context_text(retrieved_memories: List[Dict[str, Any]]) -> str:
-    contents = []
-    for i, mem in enumerate(retrieved_memories):
-        content = mem.get("used_content", '')
-        if not isinstance(content, str):
-            raise AssertionError("The used_content is not a string for the current memory unit.")
-        if not content:
-            raise AssertionError("The used_content is empty for the current memory unit.")
-        contents.append(f"### Memory {i + 1}:\n{content}")
-    return "\n\n".join(contents)
+from typing import Any, Callable
 
 
 def answer_questions(
-    retrievals: List[Dict[str, Any]],
+    retrievals: list[dict[str, Any]],
     qa_model: str,
     qa_batch_size: int = 4,
-    add_question_timestamp: bool = False,
-    dataset_type: Optional[str] = None, 
-    interface_kwargs: Optional[Dict[str, Any]] = None,
-) -> List[Dict[str, Any]]:
+    add_question_timestamp: bool = False, 
+    prompt_template: Callable[[], Template] | None = None,
+    context_builder: Callable[[list[MemoryEntry]], str] | None = None,
+    interface_kwargs: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Answer questions using retrieved memories and an LLM."""
     interface_kwargs = interface_kwargs or {}
-    questions: List[str] = []
-    contexts: List[str] = []
 
+    if context_builder is None:
+        context_builder = lambda memories: "\n\n".join(
+            f"### Memory {i + 1}:\n{mem.formatted_content or mem.content}"
+            for i, mem in enumerate(memories)
+        )
+
+    questions = []
+    contexts = []
     for item in retrievals:
-        qa_pair: QuestionAnswerPair = item["qa_pair"]
-        question_text = qa_pair.question
+        qa_pair = item["qa_pair"]
+        question = qa_pair.question
+        if "name" in qa_pair.metadata:
+            question = f"{qa_pair.metadata['name']}: {question}"
         if add_question_timestamp:
-            question_text = f"{question_text}\nQuestion Timestamp: {qa_pair.get_string_timestamp()}"
-        questions.append(question_text)
-        base_ctx = _build_context_text(item["retrieved_memories"])
-        contexts.append(base_ctx)
-    
-    
-    has_graph = any(
-        mem.get("metadata", {}).get("has_graph_relations", False)
-        for item in retrievals
-        for mem in item["retrieved_memories"]
-    )
-    if dataset_type is not None:
-        dataset_cls = DATASET_MAPPING[dataset_type]
-        prompt_name = dataset_cls.get_qa_prompt_name(has_graph) 
-    else:
-        prompt_name = "question-answering"
+            questions.append(
+                f"{question}\nQuestion Timestamp: {qa_pair.timestamp}"
+            )
+        else:
+            questions.append(question)
+        contexts.append(context_builder(item["retrieved_memories"]))
 
-    print(f"Using prompt: {prompt_name} for question answering.")
-    
     qa_operator = QuestionAnsweringOperator(
-        prompt_name=prompt_name,
+        prompt_name="default-question-answering",
         model_name=qa_model,
+        timeout=120.0, 
         **interface_kwargs,
     )
+
+    if prompt_template is not None:
+        qa_operator.set_prompt(prompt_template())
 
     responses = qa_operator(
         questions,
@@ -79,101 +62,6 @@ def answer_questions(
     )
     return responses
 
-def evaluate_answers(
-    retrievals: List[Dict[str, Any]],
-    predictions: List[Dict[str, Any]],
-    judge_model: str,
-    judge_batch_size: int = 4,
-    dataset_type: Optional[str] = None, 
-    interface_kwargs: Optional[Dict[str, Any]] = None,
-) -> List[Dict[str, Any]]:
-    interface_kwargs = interface_kwargs or {}
-    question_list: List[str] = []
-    golden_answers_list: List[List[str]] = []
-    prediction_list: List[str] = []
-    prompt_name_per_index: List[Tuple[str, str]] = []
-    category_per_index: List[Any] = []  
-    for i, item in enumerate(retrievals):
-        qa_pair: QuestionAnswerPair = item["qa_pair"]
-        question_list.append(qa_pair.question)
-        golden_answers_list.append([ans for ans in qa_pair.answer_list])
-        pred = predictions[i].get("processed_content") 
-        # LLMs are not robust to the empty string.
-        if pred is None:
-            raise ValueError(f"The prediction is None for the question {qa_pair.question}.")
-        prediction_list.append(pred)
-
-        category = qa_pair.metadata.get("category", "unknown")
-        category_per_index.append(category)
-
-        if dataset_type is not None:
-            dataset_cls = DATASET_MAPPING[dataset_type]
-            prompt_name, qtype = dataset_cls.get_judge_prompt_info(qa_pair)
-        else:
-            qtype = qa_pair.metadata.get("question_type", "normal")
-            prompt_name = "exact-match"
-    
-        prompt_name_per_index.append((prompt_name, qtype))
-
-    print(f"Using prompt: {prompt_name} for judgment.")
-    judge_operator = LLMExactMatch(
-        prompt_name=prompt_name,
-        model_name=judge_model,
-        **interface_kwargs,
-    )
-
-    groups: Dict[Tuple[str, str], List[int]] = {}
-    for idx, p in enumerate(prompt_name_per_index):
-        if p not in groups:
-            groups[p] = [] 
-        groups[p].append(idx)
-
-    judge_outputs: List[Optional[Dict[str, Any]]] = [None] * len(retrievals)
-    correctness_flags: List[Optional[bool]] = [None] * len(retrievals)
-
-    for (prompt_name, qtype), idx_list in groups.items():
-        judge_operator.set_prompt(prompt_name)
-        batched_questions = [question_list[i] for i in idx_list]
-        batched_golden = [golden_answers_list[i] for i in idx_list]
-        batched_predictions = [prediction_list[i] for i in idx_list]
-        results = judge_operator(
-            batched_questions,
-            batched_golden,
-            batched_predictions,
-            batch_size=judge_batch_size,
-            aggregate=False,
-            temperature=0.0, 
-        )
-        for local_pos, global_idx in enumerate(idx_list):
-            out = results[local_pos]
-            judge_outputs[global_idx] = out
-            content = out.get("processed_content")
-            if content is None:
-                raise ValueError(f"The content is None for the question {batched_questions[local_pos]}.")
-            is_correct = "yes" in content.lower() or "correct" in content.lower()
-            correctness_flags[global_idx] = is_correct
-        # Aggregate each group's results and print the average accuracy
-        accuracy = np.mean(
-            [correctness_flags[global_idx] for global_idx in idx_list]
-        ).item()
-        print(f"The accuracy for {qtype} (prompt name: {prompt_name}) is {accuracy:.4f}.")
-    
-    # Print the overall accuracy
-    print("\n" + "="*60)
-    accuracy = np.mean(correctness_flags).item()
-    print(f"Overall Accuracy: {accuracy:.4f}")
-    print("="*60 + "\n")
-
-    finalized = []
-    for i in range(len(retrievals)):
-        finalized.append(
-            {
-                "judge_response": judge_outputs[i],
-                "is_correct": correctness_flags[i],
-                "category": category_per_index[i],  
-            }
-        )
-    return finalized
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -188,26 +76,26 @@ if __name__ == "__main__":
     parser.add_argument(
         "--qa-model",
         type=str,
-        default="gpt-4o-mini",
-        help="Model name/path for question answering."
+        default="gpt-4.1-mini",
+        help="Model name or path for question answering."
     )
     parser.add_argument(
         "--judge-model",
         type=str,
-        default="gpt-4o-mini",
-        help="Model name/path for judgment (exact match)."
+        default="gpt-4.1-mini",
+        help="Model name or path for judgment (exact match)."
     )
     parser.add_argument(
         "--qa-batch-size",
         type=int,
         default=4,
-        help="Batch size for QA generation."
+        help="Batch size for question-answering."
     )
     parser.add_argument(
         "--judge-batch-size",
         type=int,
         default=4,
-        help="Batch size for judge model."
+        help="Batch size for judgment."
     )
     parser.add_argument(
         "--api-config-path", 
@@ -216,15 +104,41 @@ if __name__ == "__main__":
         help="Path to the API config file."
     )
     parser.add_argument(
-        "--dataset-type",
+        "--context-builder",
         type=str,
-        required=True,
-        help="The type of dataset (e.g., LoCoMo, LongMemEval)."
+        default=None,
+        help=(
+            "Import path for a custom context builder function that converts a list of "
+            "memory entries into a context string. "
+            "It accepts 'module.submodule.function' or 'path/to/file.py:function'."
+        ),
+    )
+    parser.add_argument(
+        "--prompt-template",
+        type=str,
+        default=None,
+        help=(
+            "Import path for a custom prompt template factory that returns a "
+            "template with $question and $context placeholders. "
+            "It accepts 'module.submodule.function' or 'path/to/file.py:function'."
+        ),
+    )
+    parser.add_argument(
+        "--add-question-timestamp",
+        action="store_true",
+        help="Append the question timestamp to the prompt.",
+    )
+    parser.add_argument(
+        "--dataset-type", 
+        choices=list(DATASET_MAPPING.keys()), 
+        default=list(DATASET_MAPPING.keys())[0],
+        type=str, 
+        help="The type of the dataset used to evaluate the memory layer."
     )
     args = parser.parse_args()
 
-    # Prepare interface kwargs
-    interface_kwargs: Dict[str, Any] = {}
+    # Prepare interface key-value pairs.
+    interface_kwargs = {}
     if args.api_config_path is not None:
         with open(args.api_config_path, 'r') as f:
             api_config = json.load(f)
@@ -234,46 +148,70 @@ if __name__ == "__main__":
         interface_kwargs["api_keys"] = [os.environ.get("OPENAI_API_KEY")]
         interface_kwargs["base_urls"] = [os.environ.get("OPENAI_API_BASE")]
     
+    # Resolve custom components from import paths.
+    context_builder = (
+        import_function_from_path(args.context_builder)
+        if args.context_builder is not None else None
+    )
+    prompt_template = (
+        import_function_from_path(args.prompt_template)
+        if args.prompt_template is not None else None
+    )
+
+    dataset_cls = DATASET_MAPPING[args.dataset_type]
+
     with open(args.search_results_path, 'r') as f:
         retrievals = json.load(f)
     for item in retrievals:
         item["qa_pair"] = QuestionAnswerPair(**item["qa_pair"])
-    print(f"Loaded {len(retrievals)} search results from {args.search_results_path}.")
+        item["retrieved_memories"] = [
+            MemoryEntry(**mem) for mem in item["retrieved_memories"]
+        ]
+    print(f"✅ {len(retrievals)} retrieval results are loaded from {args.search_results_path}.")
 
-    # Answer questions
-    print("Generating answers with QA model...")
+    print("🧠 Generating answers...")
     qa_responses = answer_questions(
         retrievals,
         qa_model=args.qa_model,
         qa_batch_size=args.qa_batch_size,
-        dataset_type=args.dataset_type, 
+        add_question_timestamp=args.add_question_timestamp,
+        prompt_template=prompt_template,
+        context_builder=context_builder,
         interface_kwargs=interface_kwargs,
     )
 
-    # Evaluate answers
-    print("Evaluating answers with judge model...")
-    judge_results = evaluate_answers(
-        retrievals,
-        qa_responses,
+    # Extract prediction strings from raw LLM responses. 
+    predictions = []
+    for resp in qa_responses:
+        pred = resp.get("processed_content")
+        if pred is None:
+            raise ValueError("The question-answering model returns an empty prediction.")
+        predictions.append(pred)
+
+    # Evaluate answers via the dataset class's judge logic.
+    print("⚖️ Evaluating answers...")
+    qa_pairs = [item["qa_pair"] for item in retrievals]
+    judge_results = dataset_cls.evaluate(
+        qa_pairs=qa_pairs,
+        predictions=predictions,
         judge_model=args.judge_model,
         judge_batch_size=args.judge_batch_size,
-        dataset_type=args.dataset_type, 
-        interface_kwargs=interface_kwargs,
+        **interface_kwargs,
     )
 
-    # Assemble final outputs
-    final_results: List[Dict[str, Any]] = []
+    # Assemble final outputs.
+    final_results = []
     for i, item in enumerate(retrievals):
-        qa_pair: QuestionAnswerPair = item["qa_pair"]
-        ans_dict = qa_responses[i]
-        judge_dict = judge_results[i]
+        qa_pair = item["qa_pair"]
         final_results.append(
             {
-                "qa_pair": qa_pair.model_dump(),
-                "prediction": ans_dict["processed_content"],
-                "judge_response": judge_dict["judge_response"],
-                "is_correct": judge_dict["is_correct"],
-                "retrieved_memories": item["retrieved_memories"],
+                "qa_pair": qa_pair.model_dump(mode="python"),
+                "prediction": predictions[i],
+                "accuracy": judge_results[i]["accuracy"],
+                "judge_response": judge_results[i]["judge_response"],
+                "retrieved_memories": [
+                    mem.model_dump(mode="python") for mem in item["retrieved_memories"]
+                ],
                 "user_id": item["user_id"],
             }
         )
@@ -290,4 +228,4 @@ if __name__ == "__main__":
             ensure_ascii=False, 
             indent=4, 
         )
-    print(f"Saved {len(final_results)} results to {output_path}.")
+    print(f"✅ {len(final_results)} evaluation results are saved to {output_path}.")
