@@ -12,8 +12,6 @@ MEMORY_LAYERS_MAPPING_NAMES = OrderedDict[str, str](
     [
         ("A-MEM", "AMEMLayer"),
         ("LangMem", "LangMemLayer"),
-        ("MemZero", "MemZeroLayer"),
-        ("MemZeroGraph", "MemZeroLayer"),
         ("Long-Context", "LongContextLayer"),
         ("NaiveRAG", "NaiveRAGLayer"),
         ("MemOS", "MemOSLayer"),
@@ -27,8 +25,6 @@ CONFIG_MAPPING_NAMES = OrderedDict[str, str](
     [
         ("A-MEM", "AMEMConfig"),
         ("LangMem", "LangMemConfig"),
-        ("MemZero", "MemZeroConfig"),
-        ("MemZeroGraph", "MemZeroConfig"),
         ("Long-Context", "LongContextConfig"),
         ("NaiveRAG", "NaiveRAGConfig"),
         ("MemOS", "MemOSConfig"),
