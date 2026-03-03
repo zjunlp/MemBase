@@ -34,7 +34,7 @@ def get_tokenizer_for_model(model: str) -> SelectTokenizerResponse:
             type="huggingface_tokenizer", 
             tokenizer=tokenizer,
         ) 
-    except:
+    except Exception:
         print(
             f"Native huggingface tokenizer for {model} cannot be loaded. "
             "Load tiktoken tokenizer instead."

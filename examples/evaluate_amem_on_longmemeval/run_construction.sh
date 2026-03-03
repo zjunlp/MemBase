@@ -1,35 +1,31 @@
-# An example of running the baseline model. 
-# Please modify the following variables to fit your own dataset and memory configuration. 
+#!/usr/bin/env bash
+# Stage 1: Memory Construction for A-MEM on LongMemEval.
+# It launches 2 parallel processes, each handling 2 trajectories.
+# Please modify the variables below to fit your setup.
 # ========================================================
-memory_type="LangMem"
+memory_type="A-MEM"
 dataset_type="LongMemEval"
 dataset_path="YOUR_DATASET_PATH"
-config_path="YOUR_MEMORY_CONFIG_PATH"
-num_workers=4
-tokenizer_path="gpt-4"
-log_dir="langmem_logs"
+config_path="examples/evaluate_amem_on_longmemeval/amem_config.json"
+num_workers=2
+tokenizer_path="gpt-4.1-mini"
+log_dir="amem_logs"
 token_cost_prefix="token_cost"
 pid_prefix="process"
+
 ranges=(
-    "0 100"
-    "100 200"
-    "200 300"
-    "300 400"
-    "400 500"
+    "0 2"
+    "2 4"
 )
+
 api_keys=(
     "YOUR_API_KEY_1"
     "YOUR_API_KEY_2"
-    "YOUR_API_KEY_3"
-    "YOUR_API_KEY_4"
-    "YOUR_API_KEY_5"
 )
+
 base_urls=(
     "YOUR_BASE_URL_1"
     "YOUR_BASE_URL_2"
-    "YOUR_BASE_URL_3"
-    "YOUR_BASE_URL_4"
-    "YOUR_BASE_URL_5"
 )
 # ========================================================
 
@@ -37,7 +33,7 @@ base_urls=(
 
 for ((i=0; i<${#ranges[@]}; i++)); do
     read start_idx end_idx <<< "${ranges[$i]}"
-    export OPENAI_API_KEY="${api_keys[$i]}" 
+    export OPENAI_API_KEY="${api_keys[$i]}"
     export OPENAI_API_BASE="${base_urls[$i]}"
 
     log_file="${log_dir}/${pid_prefix}_$((i+1))_${start_idx}_${end_idx}.log"

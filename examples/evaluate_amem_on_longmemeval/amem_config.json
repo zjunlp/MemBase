@@ -1,0 +1,9 @@
+{
+    "user_id": "guest",
+    "llm_backend": "openai",
+    "llm_model": "gpt-4.1-mini",
+    "embedding_provider": "openai",
+    "retriever_name_or_path": "text-embedding-3-small",
+    "evo_threshold": 100,
+    "save_dir": "amem_output"
+}
