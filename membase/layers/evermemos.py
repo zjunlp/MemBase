@@ -158,26 +158,74 @@ class EverMemOSLayer(MemBaseLayer):
                     self.config.llm_config.model, {}
                 ),
                 extract_input_dict=lambda *args, **kwargs: {
-                    "messages": kwargs.get("prompt", args[0] if len(args) > 0 else None),
+                    "messages": kwargs.get("prompt", args[0] if len(args) > 0 else ""),
                     "metadata": {
                         "op_type": (
                             "update" if 
-                                "You are a personal profile extraction expert" in kwargs.get("prompt", args[0]) 
-                                or "You are a person profile project experiences" in kwargs.get("prompt", args[0]) 
-                                or "Please analyze the latest user-AI conversation" in kwargs.get("prompt", args[0]) 
-                                or "You are an evidence completion assistant" in kwargs.get("prompt", args[0]) 
-                                or "You are a group content analysis expert" in kwargs.get("prompt", args[0])
-                                or "You are a group behavior analysis expert" in kwargs.get("prompt", args[0])
-                                or "You are a group profile aggregation expert" in kwargs.get("prompt", args[0])
-                                or "You are a personal profile analysis expert" in kwargs.get("prompt", args[0]) 
-                                or "你是一位个人档案提取专家" in kwargs.get("prompt", args[0]) 
-                                or "你是一位个人档案项目经验提取专家" in kwargs.get("prompt", args[0]) 
-                                or "请分析以下最新的用户-AI对话" in kwargs.get("prompt", args[0]) 
-                                or "你是一个证据完成助手" in kwargs.get("prompt", args[0]) 
-                                or "你是一位群组内容分析专家" in kwargs.get("prompt", args[0])
-                                or "你是一位群组行为分析专家" in kwargs.get("prompt", args[0])
-                                or "你是一位群组档案聚合专家" in kwargs.get("prompt", args[0])
-                                or "你是一位个人档案分析专家" in kwargs.get("prompt", args[0])
+                                "You are a personal profile extraction expert" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "You are a person profile project experiences" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "Please analyze the latest user-AI conversation" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "You are an evidence completion assistant" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "You are a group content analysis expert" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "You are a group behavior analysis expert" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "You are a group profile aggregation expert" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "You are a personal profile analysis expert" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "你是一位个人档案提取专家" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "你是一位个人档案项目经验提取专家" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "请分析以下最新的用户-AI对话" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "你是一个证据完成助手" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "你是一位群组内容分析专家" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                ) 
+                                or "你是一位群组行为分析专家" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                )
+                                or "你是一位群组档案聚合专家" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                )
+                                or "你是一位个人档案分析专家" in kwargs.get(
+                                    "prompt", 
+                                    args[0] if len(args) > 0 else ""
+                                )
                             else "generation"
                         ) 
                     }

@@ -1,0 +1,10 @@
+{
+    "api_keys": [
+        "sk-your-api-key-1",
+        "sk-your-api-key-2"
+    ],
+    "base_urls": [
+        "https://api.openai.com/v1",
+        "https://api.openai.com/v1"
+    ]
+}

@@ -109,6 +109,7 @@ class MemOSLayer(MemBaseLayer):
                     metadata={
                         key: value
                         for key, value in memory_dict["metadata"].items()
+                        if key != "embedding"
                     }, 
                     formatted_content=memory_dict["memory"]
                 )
@@ -249,7 +250,7 @@ class MemOSLayer(MemBaseLayer):
                         self.config.extractor_config.config.model_name_or_path, {}
                     ),
                     extract_input_dict=lambda *args, **kwargs: {
-                        "messages": kwargs.get("messages", args[0] if len(args) > 0 else None),
+                        "messages": kwargs.get("messages", args[0] if len(args) > 0 else ""),
                         "metadata": {
                             "op_type": "generation"
                         }
@@ -274,7 +275,7 @@ class MemOSLayer(MemBaseLayer):
                 wrapper=token_monitor(
                     extract_model_name=lambda *args, **kwargs: (self.config.extractor_config.config.model_name_or_path, {}),
                     extract_input_dict=lambda *args, **kwargs: {
-                        "messages": kwargs.get("messages", args[0] if len(args) > 0 else None),
+                        "messages": kwargs.get("messages", args[0] if len(args) > 0 else ""),
                         "metadata": {
                             "op_type": "update"
                         }

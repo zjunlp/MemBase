@@ -218,13 +218,15 @@ class AMEMLayer(MemBaseLayer):
                         }, 
                         {
                             "role": "user",
-                            "content": kwargs.get("prompt", args[0]) 
+                            "content": kwargs.get("prompt", args[0] if len(args) > 0 else "") 
                         }
                     ],
                     "metadata": {
                         "op_type": (
                             "generation"
-                            if kwargs.get("prompt", args[0]).startswith("Generate a structured analysis") 
+                            if kwargs.get("prompt", args[0] if len(args) > 0 else "").startswith(
+                                "Generate a structured analysis"
+                            ) 
                             else "update"
                         )
                     }

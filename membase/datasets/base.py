@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from ..model_types.dataset import MemoryDataset
+import os 
 from typing import Any
 
 
@@ -42,6 +43,11 @@ class MemBaseDataset(MemoryDataset):
             name (`str`):
                 File stem without the ".json" extension.
         """
-        Path(f"{name}.json").write_text(
+        name = f"{name}.json"
+        dir_name = os.path.dirname(name)
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+
+        Path(name).write_text(
             self.model_dump_json(indent=4), encoding="utf-8"
         )

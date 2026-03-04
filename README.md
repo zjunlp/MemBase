@@ -45,7 +45,7 @@ MemBase/
 
 ### Setting Up the Environment
 
-> **Important**: Different memory baselines may have **conflicting dependencies**. We strongly recommend creating a **separate virtual environment for each baseline** to avoid dependency conflicts.
+> ⚠️ **Important**: Different memory baselines may have **conflicting dependencies**. We strongly recommend creating a **separate virtual environment for each baseline** to avoid dependency conflicts.
 
 Each memory baseline has its own requirements file in the `envs/` directory. Below are two examples:
 
@@ -113,6 +113,8 @@ See the [`examples/`](examples/) directory for step-by-step tutorials:
 | Example | Description |
 |---------|-------------|
 | [Evaluate A-MEM on LongMemEval](examples/evaluate_amem_on_longmemeval/) | Run the full three-stage evaluation pipeline (construction, retrieval, QA) using A-MEM on LongMemEval |
+| [Evaluate MemOS on LoCoMo](examples/evaluate_memos_on_locomo/) | Evaluate MemOS with vLLM-served embedding on LoCoMo, with adversarial question filtering |
+| [Download Models](examples/download_models/) | Download pre-trained embedding and reranker models from Hugging Face |
 
 ---
 

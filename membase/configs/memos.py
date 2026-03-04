@@ -29,7 +29,7 @@ class MemOSConfig(MemBaseConfig):
                 "backend": "openai", 
                 "config": {
                     # The following fields belong to the basic LLM configuration. 
-                    "model_name_or_path": "gpt-4o-mini", 
+                    "model_name_or_path": "gpt-4.1-mini", 
                     "temperature": 0.7,
                     "max_tokens": 8192,
                     "top_p": 0.95,
@@ -53,7 +53,7 @@ class MemOSConfig(MemBaseConfig):
                 "backend": "openai", 
                 "config": {
                     # The following fields belong to the basic LLM configuration. 
-                    "model_name_or_path": "gpt-4o-mini", 
+                    "model_name_or_path": "gpt-4.1-mini", 
                     "temperature": 0.7,
                     "max_tokens": 8192,
                     "top_p": 0.95,

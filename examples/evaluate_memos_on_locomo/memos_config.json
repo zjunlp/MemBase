@@ -1,0 +1,71 @@
+{
+    "user_id": "guest",
+    "extractor_config": {
+        "backend": "openai", 
+        "config": {
+            "model_name_or_path": "gpt-4.1-mini", 
+            "temperature": 0.7,
+            "max_tokens": 8192,
+            "top_p": 0.95,
+            "top_k": 50,
+            "api_key": "YOUR_OPENAI_API_KEY", 
+            "api_base": "YOUR_OPENAI_API_BASE"
+        }
+    }, 
+    "dispatcher_config": {
+        "backend": "openai", 
+        "config": {
+            "model_name_or_path": "gpt-4.1-mini", 
+            "temperature": 0.7,
+            "max_tokens": 8192,
+            "top_p": 0.95,
+            "top_k": 50,
+            "api_key": "YOUR_OPENAI_API_KEY", 
+            "api_base": "YOUR_OPENAI_API_BASE"
+        }
+    }, 
+    "embedding_config": {
+        "backend": "universal_api",
+        "config": {
+            "provider": "openai",
+            "api_key": "EMPTY",
+            "base_url": "http://localhost:8008/v1",
+            "model_name_or_path": "Qwen3-Embedding-4B",
+            "embedding_dims": 2560,
+            "max_tokens": null
+        }
+    }, 
+    "graph_db": {
+        "backend": "neo4j", 
+        "config": {
+            "uri": "bolt://localhost:7687", 
+            "user": "neo4j", 
+            "password": "password", 
+            "use_multi_db": false,  
+            "auto_create": false, 
+            "db_name": "neo4j"
+        }
+    }, 
+    "chunker_config": {
+        "backend": "sentence",
+        "config": {
+            "tokenizer_or_token_counter": "gpt2",
+            "chunk_size": 256,
+            "chunk_overlap": 64,
+            "min_sentences_per_chunk": 1
+        }
+    }, 
+    "memory_size": {
+        "WorkingMemory": 20,
+        "LongTermMemory": 10000,
+        "UserMemory": 10000
+    }, 
+    "search_strategy": {
+        "bm25": false,
+        "cot": false,
+        "fast_graph": false
+    }, 
+    "reorganize": false, 
+    "mode": "sync",
+    "save_dir": "memos_output"
+}

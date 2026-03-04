@@ -37,6 +37,7 @@ class HippoRAGLayer(MemBaseLayer, MessageBufferMixin):
         config_dict.pop("user_id")
         config_dict.pop("num_overlap_msgs")
         config_dict.pop("message_separator")
+        config_dict.pop("max_tokens")
         config_dict.pop("deferred")
         global_config = HippoRAGBaseConfig(**config_dict)
         self.memory_layer = HippoRAG(global_config)

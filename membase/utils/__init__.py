@@ -9,7 +9,7 @@ from .token_monitor import (
     CostState, 
     get_tokenizer_for_model,
 )
-from .files import import_function_from_path
+from .files import import_function_from_path, download_models
 
 
 __all__ = [
@@ -21,4 +21,5 @@ __all__ = [
     "CostState", 
     "get_tokenizer_for_model",
     "import_function_from_path",
+    "download_models",
 ]
