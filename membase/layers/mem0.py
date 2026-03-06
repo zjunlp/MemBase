@@ -102,7 +102,11 @@ class Mem0Layer(MemBaseLayer):
         # Note that Mem0 does't use name field directly. 
         # Therefore, we incorporate the name information into the message content 
         # to retain speaker identity.
-        text = f"Speaker {message.name} (role: {message.role}) says: {message.content}"
+        text = (
+            f"{message.content}\nBelow is this message's metadata:\n"
+            f"Speaker Name: {message.name}\n"
+            f"Speaker Role: {message.role}\n"
+        )
 
         # Following Mem0's implementation (https://github.com/mem0ai/mem0/blob/main/evaluation/src/memzero/add.py#L83).
         try:
@@ -111,7 +115,7 @@ class Mem0Layer(MemBaseLayer):
                 user_id=self.config.user_id,
                 metadata={
                     "timestamp": message.timestamp, 
-                    "name": message.name,
+                    "speakers": message.name,
                 },
                 **kwargs, 
             )
@@ -119,8 +123,42 @@ class Mem0Layer(MemBaseLayer):
             print(f"Error in add_message method in Mem0Layer: \n\t{e.__class__.__name__}: {e}")
 
     def add_messages(self, messages: list[Message], **kwargs: Any) -> None:
-        for message in messages:
-            self.add_message(message, **kwargs)
+        message_level = kwargs.pop("message_level", True)
+        if message_level not in [True, False]:
+            raise TypeError(
+                "`message_level` must be a boolean to indicate whether the messages "
+                "are added to the memory layer message by message or as a whole."
+            )
+        
+        if message_level or len(messages) < 2:
+            for message in messages:
+                self.add_message(message, **kwargs)
+        else:
+            new_messages = [] 
+            for message in messages:
+                msg_dict = message.model_dump(mode="python")
+                msg_dict["content"] = (
+                    f"{message.content}\nBelow is this message's metadata:\n"
+                    f"Speaker Name: {message.name}\n"
+                    f"Speaker Role: {message.role}\n"
+                )
+                new_messages.append(msg_dict)
+            
+            self.memory_layer.add(
+                messages=new_messages,
+                user_id=self.config.user_id,
+                metadata={
+                    "timestamp": f"[{messages[0].timestamp}, {messages[-1].timestamp}]",
+                    "speakers": ", ".join(
+                        sorted(
+                            set(
+                                [message.name for message in messages]
+                            )
+                        )
+                    ),
+                },
+                **kwargs, 
+            )
 
     def retrieve(self, query: str, k: int = 10, **kwargs: Any) -> list[MemoryEntry]:
         result = self.memory_layer.search(
