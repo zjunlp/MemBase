@@ -91,6 +91,14 @@ if __name__ == "__main__":
         help="The path to the tokenizer (only for backbone model)."
     )
     parser.add_argument(
+        "--no-strict",
+        action="store_true",
+        help=(
+            "Disable strict mode. When it is set, errors during the memory construction "
+            "are logged and the message is skipped instead of aborting the trajectory."
+        ),
+    )
+    parser.add_argument(
         "--message-preprocessor-path", 
         type=str, 
         default=None, 
@@ -132,6 +140,7 @@ if __name__ == "__main__":
         seed=args.seed,
         sample_size=args.sample_size,
         rerun=args.rerun,
+        strict=not args.no_strict,
         token_cost_save_filename=args.token_cost_save_filename,
         start_idx=args.start_idx,
         end_idx=args.end_idx,

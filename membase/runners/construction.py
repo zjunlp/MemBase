@@ -38,6 +38,7 @@ def memory_construction(
     config: dict[str, Any] | None = None, 
     rerun: bool = False,
     message_preprocessor: Callable[[Message], Message] | None = None,
+    strict: bool = True,
 ) -> dict[str, float]: 
     """Given a specific interaction trajectory, build a memory for one user.
 
@@ -58,6 +59,10 @@ def memory_construction(
             If `False`, skip construction when a saved memory already exists.
         message_preprocessor (`Callable[[Message], Message]`, optional): 
             A callable that preprocesses each message before it is added to the memory.
+        strict (`bool`, defaults to `True`):
+            If it is enabled, any error raised by the memory layer during memory construction 
+            will propagate and abort the trajectory. If it is disabled, such errors are logged 
+            and the message is skipped so the remaining trajectory can continue.
 
     Returns:
         `dict[str, float]`: 
@@ -102,12 +107,23 @@ def memory_construction(
             leave=False,   
         )
 
+        num_failed = 0
         for session in trajectory:
             for message in session:
                 start_time = datetime.now() 
                 message = message.model_copy(deep=True)
                 message = message_preprocessor(message)
-                layer.add_message(message)
+                try:
+                    layer.add_message(message)
+                except Exception as e:
+                    if strict:
+                        pbar.close()
+                        raise
+                    num_failed += 1
+                    print(
+                        f"⚠️ The message is skipped because the memory layer failed to add it for user '{user_id}': "
+                        f"{e.__class__.__name__}: {e}"
+                    )
 
                 end_time = datetime.now() 
                 output["total_add_time"] += (end_time - start_time).total_seconds()
@@ -115,6 +131,11 @@ def memory_construction(
                 pbar.update(1) 
                 time.sleep(0.2)
         pbar.close()
+        if num_failed > 0:
+            print(
+                f"⚠️ {num_failed}/{total_msgs} messages are skipped " 
+                f"because the memory layer failed to add them for user '{user_id}'."
+            )
     
     start_time = datetime.now()   
     # It may include I/O operations (loading a sentence embedding model). 
@@ -181,6 +202,14 @@ class ConstructionRunnerConfig(BaseModel):
     rerun: bool = Field(
         default=False,
         description="Ignore saved memory and rebuild the memory from scratch.",
+    )
+    strict: bool = Field(
+        default=True,
+        description=(
+            "If it is enabled, any error raised by the memory layer during memory construction "
+            "will propagate and abort the trajectory. If it is disabled, such errors are logged "
+            "and the message is skipped so the remaining trajectory can continue."
+        ),
     )
     token_cost_save_filename: str = Field(
         default="token_cost",
@@ -335,6 +364,7 @@ class ConstructionRunner:
                     config=config,
                     rerun=cfg.rerun,
                     message_preprocessor=cfg.message_preprocessor,
+                    strict=cfg.strict,
                 )
                 futures.append(future)
             for future in tqdm(

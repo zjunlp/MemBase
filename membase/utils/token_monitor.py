@@ -571,7 +571,10 @@ def token_monitor(
                     print(f"Error in {func.__name__}: \n\t{e.__class__.__name__}: {e}")
                 finally:
                     end_time = datetime.now().astimezone()
-                    output_dict = extract_output_dict(result if has_result else None)
+                    if has_result:
+                        output_dict = extract_output_dict(result)
+                    else:
+                        output_dict = {"messages": ""}
                     output_dict["timestamp"] = end_time.isoformat(timespec="seconds")
                     CostStateManager.update(
                         model_name,
@@ -620,8 +623,11 @@ def token_monitor(
                     print(f"Error in {func.__name__}: \n\t{e.__class__.__name__}: {e}")
                 finally:
                     end_time = datetime.now().astimezone()
-                    # Extract the output dictionary.
-                    output_dict = extract_output_dict(result if has_result else None)
+                    if has_result:
+                        # Extract the output dictionary.
+                        output_dict = extract_output_dict(result)
+                    else:
+                        output_dict = {"messages": ""}
                     output_dict["timestamp"] = end_time.isoformat(timespec="seconds")
                     # Update the cost state.
                     CostStateManager.update(
