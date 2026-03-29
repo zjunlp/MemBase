@@ -2,7 +2,7 @@ from collections import OrderedDict
 from ..utils._lazy_mapping import _LazyMapping
 
 
-_MAPPING_NAMES = OrderedDict[str, str](
+_MAPPING_NAMES: OrderedDict[str, str] = OrderedDict(
     [
         ("A-MEM", "AMEMLayer"),
         ("LangMem", "LangMemLayer"),
@@ -15,7 +15,7 @@ _MAPPING_NAMES = OrderedDict[str, str](
     ]
 )
 
-_MODULE_MAPPING = OrderedDict[str, str](
+_MODULE_MAPPING: OrderedDict[str, str] = OrderedDict(
     [
         ("A-MEM", "amem"),
         ("LangMem", "langmem"),
