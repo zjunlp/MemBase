@@ -4,7 +4,7 @@ from .base import BaseMetric
 from typing import Any
 
 
-_MAPPING_NAMES = OrderedDict[str, str](
+_MAPPING_NAMES: OrderedDict[str, str] = OrderedDict(
     [
         ("f1", "TokenF1"),
         ("bleu", "BLEU"),
@@ -14,7 +14,7 @@ _MAPPING_NAMES = OrderedDict[str, str](
     ]
 )
 
-_MODULE_MAPPING = OrderedDict[str, str](
+_MODULE_MAPPING: OrderedDict[str, str] = OrderedDict(
     [
         ("f1", "f1"),
         ("bleu", "bleu"),
