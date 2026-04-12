@@ -343,7 +343,7 @@ class ConstructionRunner:
         config_cls = CONFIG_MAPPING[cfg.memory_type]
         if config is None:
             dummy_config = config_cls(user_id="guest")
-     ff   else:
+        else:
             dummy_config = config_cls(**config)
 
         # If token cost file exists, load it.
