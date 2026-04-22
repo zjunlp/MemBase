@@ -13,8 +13,8 @@ class OpenAIClient(OpenAI):
         model: str = "gpt-4.1", 
         post_processor: Callable[[str], Any] | None = None,
         max_tolerance: int = 3,
-        temperature: float = 0.75, 
-        top_p: float = 0.95,
+        temperature: float | None = None, 
+        top_p: float | None = None,
         stream: bool = True, 
         **kwargs: Any,
     ) -> dict[str, Any]:
@@ -30,9 +30,9 @@ class OpenAIClient(OpenAI):
                 It is useful for parsing the response content, computing the cost or extracting related metadata.
             max_tolerance (`int`, defaults to `3`): 
                 Maximum number of retry attempts.
-            temperature (`float`, defaults to `0.75`): 
+            temperature (`float`, optional): 
                 Sampling temperature.
-            top_p (`float`, defaults to `0.95`): 
+            top_p (`float`, optional): 
                 Nucleus sampling probability.
             stream (`bool`, defaults to `True`): 
                 Whether to use streaming mode.
@@ -66,7 +66,8 @@ class OpenAIClient(OpenAI):
                     reasoning_chunks = [] 
                     for chunk in response:
                         if len(chunk.choices) > 0:
-                            chunks.append(chunk.choices[0].delta.content or '')
+                            if hasattr(chunk.choices[0].delta, "content"):
+                                chunks.append(chunk.choices[0].delta.content or '')
                             if hasattr(chunk.choices[0].delta, "reasoning_content"):
                                 reasoning_chunks.append(chunk.choices[0].delta.reasoning_content or '')
                         else:
