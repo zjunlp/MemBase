@@ -78,9 +78,12 @@ if __name__ == "__main__":
         help="The ending index of the trajectories to be processed."
     )
     parser.add_argument(
-        "--strict",
+        "--no-strict",
         action="store_true",
-        help="Whether to raise an error if no memory is found for a user."
+        help=(
+            "Disable strict mode. When set, missing memories for a user are "
+            "skipped instead of raising an error."
+        ),
     )
     parser.add_argument(
         "--traced-data-save-dir",
@@ -109,7 +112,7 @@ if __name__ == "__main__":
         top_k=args.top_k,
         start_idx=args.start_idx,
         end_idx=args.end_idx,
-        strict=args.strict,
+        strict=not args.no_strict,
         question_filter=question_filter,
         traced_data_save_dir=args.traced_data_save_dir,
         tracing=args.tracing,
