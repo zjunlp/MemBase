@@ -292,3 +292,4 @@ class MemOSLayer(MemBaseLayer):
         # This memory layer is no longer needed, so we shut down the background
         # reorganizer threads it spawns.
         self.memory_layer.memory_manager.close()
+        self.memory_layer.delete_all()
