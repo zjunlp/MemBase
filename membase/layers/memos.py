@@ -289,4 +289,6 @@ class MemOSLayer(MemBaseLayer):
         return specs 
     
     def cleanup(self) -> None:
-        self.memory_layer.delete_all()
+        # This memory layer is no longer needed, so we shut down the background
+        # reorganizer threads it spawns.
+        self.memory_layer.memory_manager.close()
