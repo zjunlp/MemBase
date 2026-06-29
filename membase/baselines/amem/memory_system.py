@@ -118,6 +118,8 @@ class AgenticMemorySystem:
         self.memories = {}
         self.model_name = model_name
         self.embedder_provider = embedder_provider
+        self.embedding_api_key = embedding_api_key
+        self.embedding_base_url = embedding_base_url
         self.base_url = base_url 
         self.user_id = user_id
 
@@ -343,16 +345,16 @@ class AgenticMemorySystem:
                 collection_name="memories",
                 model_name=self.model_name,
                 embedder_provider=self.embedder_provider,
-                api_key=self.llm_controller.llm.api_key if hasattr(self.llm_controller.llm, 'api_key') else None,
-                base_url=self.base_url 
+                api_key=self.embedding_api_key,
+                base_url=self.embedding_base_url 
             )
         else:
             self.retriever = ChromaRetriever(
                 collection_name=f"memories_{self.user_id}",
                 model_name=self.model_name,
                 embedder_provider=self.embedder_provider,
-                api_key=self.llm_controller.llm.api_key if hasattr(self.llm_controller.llm, 'api_key') else None,
-                base_url=self.base_url  
+                api_key=self.embedding_api_key,
+                base_url=self.embedding_base_url 
             )
         # Re-add all memory documents with their complete metadata
         for memory in self.memories.values():
