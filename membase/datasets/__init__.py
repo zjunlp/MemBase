@@ -8,6 +8,7 @@ _MAPPING_NAMES: OrderedDict[str, str] = OrderedDict(
         ("LongMemEval", "LongMemEval"),
         ("LoCoMo", "LoCoMo"),
         ("RealMem", "RealMem"),
+        ("MobileMem", "MobileMem"),
     ]
 )
 
@@ -17,6 +18,7 @@ _MODULE_MAPPING: OrderedDict[str, str] = OrderedDict(
         ("LongMemEval", "longmemeval"),
         ("LoCoMo", "locomo"),
         ("RealMem", "realmem"),
+        ("MobileMem", "mobilemem"),
     ]
 )
 
